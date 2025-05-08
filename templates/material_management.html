@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Materiais - Cadastro de materiais</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #0056b3;
+            --primary-hover: #004494;
+            --secondary-color: #4a90e2;
+            --accent-color: #28a745;
+            --accent-hover: #218838;
+            --danger-color: #dc3545;
+            --danger-hover: #bd2130;
+            --warning-color: #ffc107;
+            --dark-color: #343a40;
+            --light-color: #f8f9fa;
+            --border-color: #dee2e6;
+            --text-color: #333;
+            --shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.25s ease-in-out;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f7fa;
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+        
+        .wrapper {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+        
+        header {
+            background-color: white;
+            box-shadow: var(--shadow);
+            padding: 1rem 0;
+            margin-bottom: 2rem;
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 0;
+        }
+        
+        .logo {
+            max-height: 100px;
+            max-width: 100%;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .user-info i {
+            color: var(--primary-color);
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .nav-links a {
+            color: var(--dark-color);
+            text-decoration: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: var(--transition);
+        }
+        
+        .nav-links a:hover {
+            background-color: var(--light-color);
+        }
+        
+        .nav-links a.active {
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 2rem;
+        }
+        
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 1.5rem;
+            padding: 1.5rem;
+            transition: var(--transition);
+        }
+        
+        .card:hover {
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--dark-color);
+        }
+        
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 0.75rem;
+            font-size: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            transition: var(--transition);
+        }
+        
+        input[type="text"]:focus, input[type="number"]:focus, select:focus {
+            border-color: var(--secondary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.25);
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 1rem;
+        }
+        
+        .form-row > div {
+            flex: 1;
+        }
+        
+        .btn {
+            display: inline-block;
+            font-weight: 500;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: middle;
+            user-select: none;
+            border: 1px solid transparent;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            border-radius: 6px;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+        
+        .btn-sm {
+            padding: 0.35rem 0.75rem;
+            font-size: 0.9rem;
+        }
+        
+        .btn-primary {
+            color: white;
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            border-color: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+        
+        .btn-success {
+            color: white;
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+        
+        .btn-success:hover {
+            background-color: var(--accent-hover);
+            border-color: var(--accent-hover);
+            transform: translateY(-2px);
+        }
+        
+        .btn-danger {
+            color: white;
+            background-color: var(--danger-color);
+            border-color: var(--danger-color);
+        }
+        
+        .btn-danger:hover {
+            background-color: var(--danger-hover);
+            border-color: var(--danger-hover);
+            transform: translateY(-2px);
+        }
+        
+        .btn-warning {
+            color: #212529;
+            background-color: var(--warning-color);
+            border-color: var(--warning-color);
+        }
+        
+        .btn-warning:hover {
+            background-color: #e0a800;
+            border-color: #e0a800;
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .action-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 1rem;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            margin-bottom: 1.5rem;
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background-color: white;
+        }
+        
+        table th, table td {
+            padding: 1rem;
+            text-align: left;
+        }
+        
+        table th {
+            background-color: #f0f5ff;
+            font-weight: 500;
+            color: var(--primary-color);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        table th:first-child {
+            border-top-left-radius: 8px;
+        }
+        
+        table th:last-child {
+            border-top-right-radius: 8px;
+        }
+        
+        table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        table tr:hover {
+            background-color: #f0f5ff;
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .status-badge.active {
+            background-color: rgba(40, 167, 69, 0.1);
+            color: var(--accent-color);
+            border: 1px solid rgba(40, 167, 69, 0.2);
+        }
+        
+        .status-badge.inactive {
+            background-color: rgba(220, 53, 69, 0.1);
+            color: var(--danger-color);
+            border: 1px solid rgba(220, 53, 69, 0.2);
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin-top: 1rem;
+        }
+        
+        .page-item {
+            display: inline-block;
+            min-width: 35px;
+            height: 35px;
+            text-align: center;
+            line-height: 35px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .page-item.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        .page-item:hover:not(.active) {
+            background-color: #f0f5ff;
+        }
+        
+        .loading-spinner {
+            text-align: center;
+            padding: 2rem;
+            color: var(--primary-color);
+        }
+        
+        .search-summary {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .total-items {
+            font-weight: 500;
+            padding: 0.5rem;
+            background-color: #f0f5ff;
+            border-radius: 4px;
+            color: var(--dark-color);
+        }
+        
+        .modal-bg {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        
+        .modal {
+            background-color: white;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            width: 90%;
+            max-width: 600px;
+            animation: modalFadeIn 0.3s ease;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .modal-title {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            margin: 0;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--dark-color);
+            transition: var(--transition);
+        }
+        
+        .close-btn:hover {
+            color: var(--danger-color);
+        }
+        
+        @keyframes modalFadeIn {
+            from {opacity: 0; transform: translateY(-20px);}
+            to {opacity: 1; transform: translateY(0);}
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+            }
+            
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .action-buttons .btn {
+                width: 100%;
+            }
+            
+            table th, table td {
+                padding: 0.75rem;
+            }
+            
+            .nav-links {
+                flex-wrap: wrap;
+            }
+            
+            .logo-container {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+        }
+        
+        .alert {
+            padding: 0.75rem 1.25rem;
+            margin-bottom: 1rem;
+            border: 1px solid transparent;
+            border-radius: 0.25rem;
+        }
+        
+        .alert-success {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        
+        .alert-danger {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        
+        .alert-warning {
+            color: #856404;
+            background-color: #fff3cd;
+            border-color: #ffeeba;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 1.5rem 0;
+            margin-top: 2rem;
+            color: #6c757d;
+            font-size: 0.9rem;
+            background-color: white;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="wrapper">
+            <div class="logo-container">
+                <img src="/static/logo.png" alt="Logo da Empresa" class="logo">
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="userName">{{ user_name }}</span>
+                    <div class="nav-links">
+                        <a href="{{ url_for('index') }}">Cadastro de Materiais</a>
+                        <a href="{{ url_for('material_management') }}" class="active">Gestão de Materiais</a>
+                        <a href="{{ url_for('logout') }}">Sair</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <div class="wrapper">
+        <div class="container">
+            <h1>Gestão de Materiais</h1>
+            
+            <div id="alertMessage" class="alert" style="display:none;"></div>
+            
+            <div class="card">
+                <h3>Filtros de Busca</h3>
+                <form id="searchForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="materialIdExt">Código do Material</label>
+                            <input type="text" id="materialIdExt" placeholder="Ex: ABC123">
+                        </div>
+                        <div class="form-group">
+                            <label for="ativo">Status</label>
+                            <select id="ativo">
+                                <option value="">Todos</option>
+                                <option value="true" selected>Ativos</option>
+                                <option value="false">Bloqueados</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="action-buttons">
+                        <button type="button" id="clearFilters" class="btn btn-warning">
+                            <i class="fas fa-eraser"></i> Limpar Filtros
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i> Buscar Materiais
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="search-summary" style="display:none;">
+                <div class="total-items">Total: <span id="totalItems">0</span> materiais encontrados</div>
+                <div>
+                    <label for="pageSize">Itens por página:</label>
+                    <select id="pageSize">
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table id="materialsTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Código</th>
+                            <th>Nome/Descrição</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Materials will be added here dynamically -->
+                        <tr>
+                            <td colspan="5" class="loading-spinner" id="loadingMessage" style="display:none;">
+                                <i class="fas fa-spinner fa-spin fa-2x"></i>
+                                <p>Carregando materiais...</p>
+                            </td>
+                        </tr>
+                        <tr id="noData">
+                            <td colspan="5" style="text-align: center;">
+                                Utilize os filtros acima para buscar materiais
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="pagination" id="pagination" style="display:none;">
+                <!-- Pagination will be added here dynamically -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Material Edit Modal -->
+    <div id="editModal" class="modal-bg">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Editar Material</h3>
+                <button class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <input type="hidden" id="edit_materialId">
+                    <div class="form-group">
+                        <label for="edit_materialIdExt">Código do Material *</label>
+                        <input type="text" id="edit_materialIdExt" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_nome">Nome/Descrição do Material *</label>
+                        <input type="text" id="edit_nome" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_ativo">Status</label>
+                        <select id="edit_ativo">
+                            <option value="true">Ativo</option>
+                            <option value="false">Bloqueado</option>
+                        </select>
+                    </div>
+                    <div class="action-buttons">
+                        <button type="button" class="btn btn-danger cancel-btn">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <div class="wrapper">
+            <p>&copy; 2025 Sysmex Brasil. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elements
+            const searchForm = document.getElementById('searchForm');
+            const materialsTable = document.getElementById('materialsTable').getElementsByTagName('tbody')[0];
+            const pagination = document.getElementById('pagination');
+            const loadingMessage = document.getElementById('loadingMessage');
+            const noData = document.getElementById('noData');
+            const searchSummary = document.querySelector('.search-summary');
+            const totalItemsSpan = document.getElementById('totalItems');
+            const pageSizeSelect = document.getElementById('pageSize');
+            const editModal = document.getElementById('editModal');
+            const editForm = document.getElementById('editForm');
+            const alertMessage = document.getElementById('alertMessage');
+            
+            // State variables
+            let currentPage = 1;
+            let totalPages = 0;
+            let currentFilters = {};
+            let currentPageSize = 25;
+            
+            // Initialize
+            pageSizeSelect.value = currentPageSize;
+            
+            // Clear filters button
+            document.getElementById('clearFilters').addEventListener('click', function() {
+                document.getElementById('materialIdExt').value = '';
+                document.getElementById('ativo').value = 'true'; // Default to active
+            });
+            
+            // Form submission
+            searchForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                currentPage = 1; // Reset to first page when searching
+                searchMaterials();
+            });
+            
+            // Page size change
+            pageSizeSelect.addEventListener('change', function() {
+                currentPageSize = parseInt(this.value);
+                currentPage = 1; // Reset to first page when changing page size
+                searchMaterials();
+            });
+            
+            // Search function
+            function searchMaterials() {
+                showLoading(true);
+                
+                // Get filters
+                const materialIdExt = document.getElementById('materialIdExt').value.trim();
+                const ativo = document.getElementById('ativo').value;
+                
+                // Build filter object
+                const filters = {};
+                if (materialIdExt) filters.materialIdExt = materialIdExt;
+                if (ativo !== '') filters.ativo = ativo === 'true'; // Convert string to boolean
+                
+                // Add pagination
+                filters.pageNumber = currentPage;
+                filters.pageSize = currentPageSize;
+                
+                // Save current filters (without pagination) for later use
+                currentFilters = {...filters};
+                delete currentFilters.pageNumber;
+                delete currentFilters.pageSize;
+                
+                // Call API
+                fetch('/api/search_materials', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(filters)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    showLoading(false);
+                    
+                    if (data.success) {
+                        displayMaterials(data.data);
+                    } else {
+                        showAlert('danger', `Erro na busca: ${data.error || 'Erro desconhecido'}`);
+                        clearTable();
+                        noData.style.display = '';
+                        noData.cells[0].textContent = `Erro na busca: ${data.error || 'Erro desconhecido. Tente novamente.'}`;
+                    }
+                })
+                .catch(error => {
+                    showLoading(false);
+                    showAlert('danger', `Erro na requisição: ${error.message}`);
+                    clearTable();
+                    noData.style.display = '';
+                    noData.cells[0].textContent = 'Erro de conexão. Tente novamente mais tarde.';
+                });
+            }
+            
+            // Display materials in table
+            function displayMaterials(data) {
+                clearTable();
+                
+                const materials = data.items || [];
+                const total = data.totalCount || 0;
+                totalPages = data.totalPages || 0;
+                
+                // Update total count
+                totalItemsSpan.textContent = total;
+                searchSummary.style.display = total > 0 ? 'flex' : 'none';
+                
+                if (materials.length === 0) {
+                    noData.style.display = '';
+                    noData.cells[0].textContent = 'Nenhum material encontrado para os filtros selecionados';
+                    pagination.style.display = 'none';
+                    return;
+                }
+                
+                noData.style.display = 'none';
+                
+                // Create rows for each material
+                materials.forEach(material => {
+                    const row = materialsTable.insertRow();
+                    
+                    // Create text content
+                    const idCell = row.insertCell();
+                    idCell.textContent = material.materialId;
+                    
+                    const codeCell = row.insertCell();
+                    codeCell.textContent = material.materialIdExt;
+                    
+                    const nameCell = row.insertCell();
+                    nameCell.textContent = material.nome;
+                    
+                    const statusCell = row.insertCell();
+                    const statusBadge = document.createElement('span');
+                    statusBadge.className = `status-badge ${material.ativo ? 'active' : 'inactive'}`;
+                    statusBadge.innerHTML = material.ativo ? 
+                        '<i class="fas fa-check-circle"></i> Ativo' : 
+                        '<i class="fas fa-ban"></i> Bloqueado';
+                    statusCell.appendChild(statusBadge);
+                    
+                    const actionsCell = row.insertCell();
+                    
+                    // Edit button
+                    const editBtn = document.createElement('button');
+                    editBtn.className = 'btn btn-primary btn-sm';
+                    editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+                    editBtn.title = 'Editar';
+                    editBtn.setAttribute('data-id', material.materialId);
+                    editBtn.addEventListener('click', () => openEditModal(material));
+                    actionsCell.appendChild(editBtn);
+                    
+                    // Spacer
+                    actionsCell.appendChild(document.createTextNode(' '));
+                    
+                    // Toggle status button
+                    const toggleBtn = document.createElement('button');
+                    toggleBtn.className = material.ativo ? 
+                        'btn btn-danger btn-sm' : 'btn btn-success btn-sm';
+                    toggleBtn.innerHTML = material.ativo ? 
+                        '<i class="fas fa-ban"></i>' : 
+                        '<i class="fas fa-check-circle"></i>';
+                    toggleBtn.title = material.ativo ? 'Bloquear' : 'Ativar';
+                    toggleBtn.setAttribute('data-id', material.materialId);
+                    toggleBtn.addEventListener('click', () => toggleMaterialStatus(material));
+                    actionsCell.appendChild(toggleBtn);
+                });
+                
+                // Update pagination
+                updatePagination(total);
+            }
+            
+            // Clear table
+            function clearTable() {
+                // Keep the loading and no data rows, remove others
+                const rows = Array.from(materialsTable.rows);
+                rows.forEach(row => {
+                    if (row !== loadingMessage.parentNode && row !== noData) {
+                        row.remove();
+                    }
+                });
+            }
+            
+            // Show/hide loading
+            function showLoading(show) {
+                loadingMessage.style.display = show ? '' : 'none';
+                noData.style.display = show ? 'none' : '';
+            }
+            
+            // Update pagination controls
+            function updatePagination(totalItems) {
+                pagination.innerHTML = '';
+                
+                if (totalPages <= 1) {
+                    pagination.style.display = 'none';
+                    return;
+                }
+                
+                pagination.style.display = 'flex';
+                
+                // Previous button
+                const prevBtn = document.createElement('div');
+                prevBtn.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+                prevBtn.textContent = '«';
+                if (currentPage > 1) {
+                    prevBtn.addEventListener('click', () => goToPage(currentPage - 1));
+                }
+                pagination.appendChild(prevBtn);
+                
+                // Page numbers
+                const maxButtons = 5; // Maximum number of page buttons to show
+                let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+                let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+                
+                if (endPage - startPage + 1 < maxButtons) {
+                    startPage = Math.max(1, endPage - maxButtons + 1);
+                }
+                
+                for (let i = startPage; i <= endPage; i++) {
+                    const pageBtn = document.createElement('div');
+                    pageBtn.className = `page-item ${i === currentPage ? 'active' : ''}`;
+                    pageBtn.textContent = i;
+                    pageBtn.addEventListener('click', () => goToPage(i));
+                    pagination.appendChild(pageBtn);
+                }
+                
+                // Next button
+                const nextBtn = document.createElement('div');
+                nextBtn.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+                nextBtn.textContent = '»';
+                if (currentPage < totalPages) {
+                    nextBtn.addEventListener('click', () => goToPage(currentPage + 1));
+                }
+                pagination.appendChild(nextBtn);
+            }
+            
+            // Go to specific page
+            function goToPage(page) {
+                if (page < 1 || page > totalPages || page === currentPage) {
+                    return;
+                }
+                
+                currentPage = page;
+                searchMaterials();
+            }
+            
+            // Open edit modal
+            function openEditModal(material) {
+                document.getElementById('edit_materialId').value = material.materialId;
+                document.getElementById('edit_materialIdExt').value = material.materialIdExt;
+                document.getElementById('edit_nome').value = material.nome;
+                document.getElementById('edit_ativo').value = material.ativo.toString();
+                
+                editModal.style.display = 'block';
+            }
+            
+            // Close modal handlers
+            document.querySelector('.close-btn').addEventListener('click', () => {
+                editModal.style.display = 'none';
+            });
+            
+            document.querySelector('.cancel-btn').addEventListener('click', () => {
+                editModal.style.display = 'none';
+            });
+            
+            window.addEventListener('click', (e) => {
+                if (e.target === editModal) {
+                    editModal.style.display = 'none';
+                }
+            });
+            
+            // Edit form submission
+            editForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const materialId = parseInt(document.getElementById('edit_materialId').value);
+                const materialIdExt = document.getElementById('edit_materialIdExt').value.trim();
+                const nome = document.getElementById('edit_nome').value.trim();
+                const ativo = document.getElementById('edit_ativo').value === 'true';
+                
+                if (!materialIdExt || !nome) {
+                    showAlert('warning', 'Preencha todos os campos obrigatórios.');
+                    return;
+                }
+                
+                const material = {
+                    materialId,
+                    materialIdExt,
+                    nome,
+                    ativo,
+                    tipo: "FERT",
+                    matGrupoId: 7,
+                    uniMedida: "EA"
+                };
+                
+                updateMaterial(material);
+            });
+            
+            // Toggle material status (block/unblock)
+            function toggleMaterialStatus(material) {
+                const newStatus = !material.ativo;
+                const statusText = newStatus ? 'ativar' : 'bloquear';
+                
+                if (!confirm(`Deseja ${statusText} o material "${material.nome}"?`)) {
+                    return;
+                }
+                
+                const updatedMaterial = {
+                    ...material,
+                    ativo: newStatus,
+                    tipo: "FERT",
+                    matGrupoId: 7,
+                    uniMedida: "EA"
+                };
+                
+                updateMaterial(updatedMaterial);
+            }
+            
+            // Update material via API
+            function updateMaterial(material) {
+                fetch('/api/update_material', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(material)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    editModal.style.display = 'none';
+                    
+                    if (data.success) {
+                        showAlert('success', 'Material atualizado com sucesso!');
+                        // Re-search to update the table
+                        searchMaterials();
+                    } else {
+                        showAlert('danger', `Erro ao atualizar material: ${data.error || 'Erro desconhecido'}`);
+                    }
+                })
+                .catch(error => {
+                    editModal.style.display = 'none';
+                    showAlert('danger', `Erro na requisição: ${error.message}`);
+                });
+            }
+            
+            // Show alert message
+            function showAlert(type, message) {
+                alertMessage.className = `alert alert-${type}`;
+                alertMessage.textContent = message;
+                alertMessage.style.display = 'block';
+                
+                // Auto hide after 5 seconds
+                setTimeout(() => {
+                    alertMessage.style.display = 'none';
+                }, 5000);
+            }
+            
+            // Initial search with active materials
+            document.addEventListener('DOMContentLoaded', function() {
+                // Delay the initial search to ensure everything is loaded
+                setTimeout(() => {
+                    // Only search if we're on the search page
+                    if (document.getElementById('searchForm')) {
+                        document.getElementById('ativo').value = 'true';
+                    }
+                }, 500);
+            });
+        });
+    </script>
+</body>
+</html>

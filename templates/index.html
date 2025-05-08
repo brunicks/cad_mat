@@ -54,13 +54,46 @@
         .logo-container {
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
             padding: 1rem 0;
         }
         
         .logo {
-            max-height: 120px;
+            max-height: 100px;
             max-width: 100%;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .user-info i {
+            color: var(--primary-color);
+            font-size: 1.5rem;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .nav-links a {
+            color: var(--dark-color);
+            text-decoration: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: var(--transition);
+        }
+        
+        .nav-links a:hover {
+            background-color: var(--light-color);
+        }
+        
+        .nav-links a.active {
+            color: var(--primary-color);
+            font-weight: 500;
         }
         
         .container {
@@ -411,6 +444,15 @@
         <div class="wrapper">
             <div class="logo-container">
                 <img src="/static/logo.png" alt="Logo da Empresa" class="logo">
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="userName">{{ user_name }}</span>
+                    <div class="nav-links">
+                        <a href="{{ url_for('index') }}" class="active">Cadastro de Materiais</a>
+                        <a href="{{ url_for('material_management') }}">Gestão de Materiais</a>
+                        <a href="{{ url_for('logout') }}">Sair</a>
+                    </div>
+                </div>
             </div>
         </div>
     </header>

@@ -60,6 +60,7 @@ APP_ID = "b51bc34c-52bd-4678-9e08-1580b58c1a79"
 
 # Novas constantes para API de materiais
 MATERIAL_API_ENDPOINT = f"{SYSMEX_API_BASE_URL}/Material/AddOrUpdate"
+MATERIAL_SEARCH_ENDPOINT = f"{SYSMEX_API_BASE_URL}/Material/GetByFilter"
 
 # Função para obter token da aplicação
 def get_app_token():
@@ -319,6 +320,244 @@ def submit_material():
             }), 500
     except Exception as e:
         logger.exception(f"Exceção ao enviar material: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Exceção ao processar requisição: {str(e)}"
+        }), 500
+
+@app.route('/material_management')
+@login_required
+def material_management():
+    logger.debug("Acessando a página de gestão de materiais")
+    return render_template('material_management.html', user_name=session.get('user_name'))
+
+@app.route('/api/search_materials', methods=['POST'])
+@login_required
+def search_materials():
+    """Pesquisa materiais com base nos filtros fornecidos"""
+    try:
+        logger.debug("Iniciando pesquisa de materiais")
+        
+        # Verificar autenticação
+        if 'user_token' not in session:
+            logger.error("Token de usuário não encontrado na sessão")
+            return jsonify({'success': False, 'error': 'Usuário não autenticado. Faça login novamente.'}), 401
+        
+        # Obter filtros do request
+        filters = request.json or {}
+        
+        # Log dos filtros usados na pesquisa
+        logger.debug(f"Filtros de pesquisa: {safe_json_dumps(filters)}")
+        
+        # Configurar cabeçalhos com token de autenticação
+        headers = {
+            'Authorization': f"Bearer {session['user_token']}",
+            'Content-Type': 'application/json'
+        }
+        
+        # Enviar pesquisa para a API
+        response = requests.post(
+            MATERIAL_SEARCH_ENDPOINT, 
+            json=filters, 
+            headers=headers
+        )
+        
+        logger.debug(f"Resposta da API de pesquisa: Status {response.status_code}")
+        
+        # Analisar resposta
+        if response.status_code == 200:
+            try:
+                response_data = response.json()
+                
+                # Verificar o tipo da resposta - pode ser uma lista ou um objeto
+                if isinstance(response_data, list):
+                    # API retornou diretamente a lista de materiais
+                    items = response_data
+                    total_count = len(items)
+                    page_size = filters.get('pageSize', 25)
+                    page_number = filters.get('pageNumber', 1)
+                    
+                    # Se a API não implementa paginação, fazemos manualmente
+                    start_index = (page_number - 1) * page_size
+                    end_index = start_index + page_size
+                    paged_items = items[start_index:end_index] if start_index < len(items) else []
+                    
+                    # Calcular o número total de páginas
+                    total_pages = (total_count + page_size - 1) // page_size if page_size > 0 else 0
+                    
+                    logger.info(f"Pesquisa de materiais retornou {len(paged_items)} itens de um total de {total_count}")
+                    
+                    return jsonify({
+                        'success': True,
+                        'data': {
+                            'items': paged_items,
+                            'totalCount': total_count,
+                            'totalPages': total_pages,
+                            'pageNumber': page_number,
+                            'pageSize': page_size
+                        }
+                    })
+                else:
+                    # Formato esperado como objeto com result, items, etc.
+                    if response_data.get('result', False):
+                        items = response_data.get('items', [])
+                        total_count = response_data.get('count', 0)
+                        page_size = filters.get('pageSize', 25)
+                        page_number = filters.get('pageNumber', 1)
+                        
+                        # Calcular o número total de páginas
+                        total_pages = (total_count + page_size - 1) // page_size if page_size > 0 else 0
+                        
+                        logger.info(f"Pesquisa de materiais retornou {len(items)} itens de um total de {total_count}")
+                        
+                        return jsonify({
+                            'success': True,
+                            'data': {
+                                'items': items,
+                                'totalCount': total_count,
+                                'totalPages': total_pages,
+                                'pageNumber': page_number,
+                                'pageSize': page_size
+                            }
+                        })
+                    else:
+                        error_msg = response_data.get('message', 'Erro não especificado pela API')
+                        logger.error(f"Erro retornado pela API de pesquisa: {error_msg}")
+                        return jsonify({
+                            'success': False,
+                            'error': error_msg
+                        })
+            except Exception as e:
+                logger.exception(f"Erro ao processar resposta da API de pesquisa: {str(e)}")
+                return jsonify({
+                    'success': False,
+                    'error': f"Erro ao processar resposta: {str(e)}"
+                }), 500
+        else:
+            logger.error(f"Erro na requisição à API de pesquisa: Status {response.status_code}")
+            error_msg = f"Erro na comunicação com a API: {response.status_code}"
+            
+            try:
+                # Tentar obter mensagem de erro do corpo da resposta
+                error_data = response.json()
+                if isinstance(error_data, dict) and 'message' in error_data:
+                    error_msg = error_data['message']
+            except:
+                # Se falhar ao obter mensagem JSON, usar o texto da resposta
+                if response.text:
+                    error_msg = f"{error_msg} - {response.text[:200]}"
+            
+            # Para fins de desenvolvimento, retornar erro 200 em vez de 500
+            # para que o cliente possa mostrar a mensagem de erro
+            return jsonify({
+                'success': False,
+                'error': error_msg
+            }), 200
+    except Exception as e:
+        logger.exception(f"Exceção ao pesquisar materiais: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Exceção ao processar requisição: {str(e)}"
+        }), 200  # Código 200 para que o cliente exiba a mensagem
+
+@app.route('/api/update_material', methods=['POST'])
+@login_required
+def update_material():
+    """Atualiza um material existente ou cria um novo"""
+    try:
+        logger.debug("Iniciando atualização/criação de material")
+        
+        # Verificar autenticação
+        if 'user_token' not in session:
+            logger.error("Token de usuário não encontrado na sessão")
+            return jsonify({'success': False, 'error': 'Usuário não autenticado. Faça login novamente.'}), 401
+        
+        # Obter dados do material do request
+        material_data = request.json
+        
+        if not material_data:
+            logger.error("Dados de material não fornecidos")
+            return jsonify({'success': False, 'error': 'Dados do material não fornecidos'}), 400
+        
+        # Garantir que campos obrigatórios estão preenchidos
+        if not material_data.get('materialIdExt') or not material_data.get('nome'):
+            logger.error("Campos obrigatórios não preenchidos")
+            return jsonify({
+                'success': False, 
+                'error': 'Código e nome do material são obrigatórios'
+            }), 400
+        
+        # Garantir que os campos padrão estão preenchidos
+        material_data['tipo'] = material_data.get('tipo', 'FERT')
+        material_data['matGrupoId'] = material_data.get('matGrupoId', 7)
+        material_data['uniMedida'] = material_data.get('uniMedida', 'EA')
+        
+        # Log do material que será enviado
+        logger.debug(f"Enviando material para atualização: {safe_json_dumps(material_data)}")
+        
+        # Configurar cabeçalhos com token de autenticação
+        headers = {
+            'Authorization': f"Bearer {session['user_token']}",
+            'Content-Type': 'application/json'
+        }
+        
+        # Enviar material para a API
+        response = requests.post(
+            MATERIAL_API_ENDPOINT, 
+            json=material_data, 
+            headers=headers
+        )
+        
+        logger.debug(f"Resposta da API: Status {response.status_code}")
+        
+        # Analisar resposta
+        if response.status_code == 200:
+            try:
+                response_data = response.json()
+                
+                # Verificar se a API indica sucesso
+                if response_data.get('result', False):
+                    action = "atualizado" if material_data.get('materialId', 0) > 0 else "cadastrado"
+                    logger.info(f"Material {material_data.get('materialIdExt')} {action} com sucesso")
+                    return jsonify({
+                        'success': True,
+                        'message': f'Material {action} com sucesso',
+                        'data': response_data
+                    })
+                else:
+                    error_msg = response_data.get('message', 'Erro não especificado pela API')
+                    logger.error(f"Erro retornado pela API: {error_msg}")
+                    return jsonify({
+                        'success': False,
+                        'error': error_msg,
+                        'data': response_data
+                    })
+            except Exception as e:
+                logger.exception(f"Erro ao processar resposta da API: {str(e)}")
+                return jsonify({
+                    'success': False,
+                    'error': f"Erro ao processar resposta: {str(e)}"
+                }), 500
+        else:
+            logger.error(f"Erro na requisição à API: Status {response.status_code}")
+            error_msg = f"Erro na comunicação com a API: {response.status_code}"
+            
+            try:
+                # Tentar obter mensagem de erro do corpo da resposta
+                error_data = response.json()
+                if error_data and 'message' in error_data:
+                    error_msg = error_data['message']
+            except:
+                # Se falhar ao obter mensagem JSON, usar o texto da resposta
+                if response.text:
+                    error_msg = f"{error_msg} - {response.text[:200]}"
+            
+            return jsonify({
+                'success': False,
+                'error': error_msg
+            }), 500
+    except Exception as e:
+        logger.exception(f"Exceção ao atualizar material: {str(e)}")
         return jsonify({
             'success': False,
             'error': f"Exceção ao processar requisição: {str(e)}"
