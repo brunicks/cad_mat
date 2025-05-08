@@ -1,9 +1,6 @@
-from flask import Flask, render_template, request, make_response, jsonify, send_file, redirect, session, url_for
+from flask import Flask, render_template, request, jsonify, redirect, session, url_for
 import datetime
-import csv
-import io
 import os
-import pandas as pd
 import requests
 import logging
 import base64
@@ -60,6 +57,9 @@ logger.info("=== Inicializando aplicação Sistema de Cadastro de Materiais ==="
 # Constantes da API
 SYSMEX_API_BASE_URL = "http://customer-API.qa.sysmexamerica.com/api"
 APP_ID = "b51bc34c-52bd-4678-9e08-1580b58c1a79"
+
+# Novas constantes para API de materiais
+MATERIAL_API_ENDPOINT = f"{SYSMEX_API_BASE_URL}/Material/AddOrUpdate"
 
 # Função para obter token da aplicação
 def get_app_token():
@@ -224,137 +224,105 @@ def check_auth():
     logger.debug("Verificação de autenticação: usuário não autenticado")
     return jsonify({'authenticated': False})
 
-@app.route('/download_template', methods=['GET'])
+@app.route('/api/submit_material', methods=['POST'])
 @login_required
-def download_template():
+def submit_material():
+    """Envia um material para a API do Sysmex"""
     try:
-        logger.debug("Gerando template CSV para download")
+        logger.debug("Iniciando envio de material via API")
         
-        # Create CSV in memory
-        output = io.StringIO()
-        writer = csv.writer(output, delimiter=';', quoting=csv.QUOTE_MINIMAL)
+        # Verificar autenticação
+        if 'user_token' not in session:
+            logger.error("Token de usuário não encontrado na sessão")
+            return jsonify({'success': False, 'error': 'Usuário não autenticado. Faça login novamente.'}), 401
         
-        # Write header with instructions
-        writer.writerow(['INSTRUÇÕES:'])
-        writer.writerow(['1. Preencha as colunas abaixo com os dados dos materiais'])
-        writer.writerow(['2. Para marcar um material como bloqueado, escreva "X" na coluna "Bloqueio"'])
-        writer.writerow(['3. Deixe a coluna "Bloqueio" vazia para materiais não bloqueados'])
-        writer.writerow(['4. Não altere a ordem ou remova as colunas'])
-        writer.writerow(['5. Salve o arquivo e faça o upload na plataforma'])
-        writer.writerow([])  # Empty row for separation
+        # Obter dados do material do request
+        material_data = request.json
         
-        # Write actual template header
-        writer.writerow(['Código Material', 'Descrição Material', 'Bloqueio'])
+        if not material_data:
+            logger.error("Dados de material não fornecidos")
+            return jsonify({'success': False, 'error': 'Dados do material não fornecidos'}), 400
         
-        # Write example row
-        writer.writerow(['123456', 'Exemplo de Material', 'X'])
-        writer.writerow(['789012', 'Exemplo sem bloqueio', ''])
+        # Completar o payload com valores padrão para a API
+        complete_material = {
+            "materialId": 0,  # auto increment
+            "materialIdExt": material_data.get('materialIdExt', ''),
+            "nome": material_data.get('nome', ''),
+            "tipo": "FERT",  # valor padrão
+            "matGrupoId": 7,  # valor padrão
+            "uniMedida": "EA",  # valor padrão
+            "ativo": True  # valor padrão
+        }
         
-        # Prepare response
-        output.seek(0)
-        response = make_response(output.getvalue())
-        response.headers['Content-Disposition'] = 'attachment; filename=template_materiais.csv'
-        response.headers['Content-type'] = 'text/csv'
+        # Log do material que será enviado
+        logger.debug(f"Enviando material: {safe_json_dumps(complete_material)}")
         
-        logger.info("Template CSV gerado com sucesso")
-        return response
-    except Exception as e:
-        logger.exception(f"Erro ao gerar template CSV: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/upload_csv', methods=['POST'])
-@login_required
-def upload_csv():
-    try:
-        logger.debug("Processando upload de CSV")
+        # Configurar cabeçalhos com token de autenticação
+        headers = {
+            'Authorization': f"Bearer {session['user_token']}",
+            'Content-Type': 'application/json'
+        }
         
-        if 'file' not in request.files:
-            logger.warning("Upload CSV: nenhum arquivo enviado")
-            return jsonify({'error': 'Nenhum arquivo enviado'}), 400
+        # Enviar material para a API
+        response = requests.post(
+            MATERIAL_API_ENDPOINT, 
+            json=complete_material, 
+            headers=headers
+        )
         
-        file = request.files['file']
+        logger.debug(f"Resposta da API: Status {response.status_code}")
         
-        if file.filename == '':
-            logger.warning("Upload CSV: nome de arquivo vazio")
-            return jsonify({'error': 'Nenhum arquivo selecionado'}), 400
+        # Analisar resposta
+        if response.status_code == 200:
+            try:
+                response_data = response.json()
+                
+                # Verificar se a API indica sucesso
+                if response_data.get('result', False):
+                    logger.info(f"Material {material_data.get('materialIdExt')} cadastrado com sucesso")
+                    return jsonify({
+                        'success': True,
+                        'message': 'Material cadastrado com sucesso',
+                        'data': response_data
+                    })
+                else:
+                    error_msg = response_data.get('message', 'Erro não especificado pela API')
+                    logger.error(f"Erro retornado pela API: {error_msg}")
+                    return jsonify({
+                        'success': False,
+                        'error': error_msg,
+                        'data': response_data
+                    })
+            except Exception as e:
+                logger.exception(f"Erro ao processar resposta da API: {str(e)}")
+                return jsonify({
+                    'success': False,
+                    'error': f"Erro ao processar resposta: {str(e)}"
+                }), 500
+        else:
+            logger.error(f"Erro na requisição à API: Status {response.status_code}")
+            error_msg = f"Erro na comunicação com a API: {response.status_code}"
             
-        if not file.filename.endswith('.csv'):
-            logger.warning("Upload CSV: tipo de arquivo inválido")
-            return jsonify({'error': 'Arquivo deve ser do tipo CSV'}), 400
-        
-        # Read CSV file
-        stream = io.StringIO(file.stream.read().decode('utf-8'))
-        df = pd.read_csv(stream, delimiter=';', skiprows=7)  # Skip the instruction rows
-        
-        logger.debug(f"CSV lido com sucesso: {len(df)} linhas encontradas")
-        
-        # Process materials
-        materials = []
-        for _, row in df.iterrows():
-            if pd.notna(row['Código Material']) and pd.notna(row['Descrição Material']):
-                material = {
-                    'code': str(row['Código Material']).strip(),
-                    'description': str(row['Descrição Material']).strip(),
-                    'blocked': str(row.get('Bloqueio', '')).strip().upper() == 'X'
-                }
-                materials.append(material)
-        
-        logger.info(f"CSV processado: {len(materials)} materiais válidos extraídos")
-        return jsonify({'success': True, 'materials': materials, 'count': len(materials)})
+            try:
+                # Tentar obter mensagem de erro do corpo da resposta
+                error_data = response.json()
+                if error_data and 'message' in error_data:
+                    error_msg = error_data['message']
+            except:
+                # Se falhar ao obter mensagem JSON, usar o texto da resposta
+                if response.text:
+                    error_msg = f"{error_msg} - {response.text[:200]}"
+            
+            return jsonify({
+                'success': False,
+                'error': error_msg
+            }), 500
     except Exception as e:
-        logger.exception(f"Erro ao processar CSV: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/generate_csv', methods=['POST'])
-@login_required
-def generate_csv():
-    try:
-        logger.debug("Gerando CSV com materiais")
-        
-        # Get data from request
-        data = request.json
-        materials = data.get('materials', [])
-        
-        logger.debug(f"Gerando CSV com {len(materials)} materiais")
-        
-        # Create timestamp for filename
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"MAT_{timestamp}.csv"
-        
-        # Create CSV in memory
-        output = io.StringIO()
-        writer = csv.writer(output, delimiter=';', quoting=csv.QUOTE_MINIMAL)
-        
-        # Write header
-        writer.writerow([
-            'Grupo Mat.', 'Descr.Grupo', 'Descr.SubG', 'Cód. Material',
-            'Tipo Material', 'Unidade Medida', 'Descrição Material', 'Cód. Bloqueio'
-        ])
-        
-        # Write materials
-        for material in materials:
-            writer.writerow([
-                '0050000300',
-                'Serviços de Manutenção',
-                'Peças',
-                material['code'],
-                'FERT',
-                'EA',
-                material['description'],
-                'X' if material['blocked'] else ''
-            ])
-        
-        # Prepare response
-        output.seek(0)
-        response = make_response(output.getvalue())
-        response.headers['Content-Disposition'] = f'attachment; filename={filename}'
-        response.headers['Content-type'] = 'text/csv'
-        
-        logger.info(f"CSV {filename} gerado com sucesso com {len(materials)} materiais")
-        return response
-    except Exception as e:
-        logger.exception(f"Erro ao gerar CSV: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        logger.exception(f"Exceção ao enviar material: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Exceção ao processar requisição: {str(e)}"
+        }), 500
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -365,193 +333,6 @@ def page_not_found(e):
 def server_error(e):
     logger.error(f"Erro interno do servidor: {str(e)}")
     return render_template('login.html', error="Erro interno do servidor"), 500
-
-# Rota para criar o arquivo de template se não existir
-@app.route('/create_template', methods=['GET'])
-def create_template():
-    try:
-        # Create folders if they don't exist
-        os.makedirs('templates', exist_ok=True)
-        os.makedirs('static', exist_ok=True)
-        os.makedirs('logs', exist_ok=True)
-        
-        logger.info("Diretórios criados/verificados com sucesso")
-        
-        # Copy the login.html template if it doesn't exist
-        if not os.path.exists('templates/login.html'):
-            with open('templates/login.html', 'w', encoding='utf-8') as f:
-                f.write("""<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Cadastro de materiais</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
-    <style>
-        :root {
-            --primary-color: #0056b3;
-            --secondary-color: #4a90e2;
-            --accent-color: #28a745;
-            --danger-color: #dc3545;
-            --dark-color: #343a40;
-            --light-color: #f8f9fa;
-            --border-color: #dee2e6;
-            --text-color: #333;
-            --shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-        }
-        
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        
-        body {
-            font-family: 'Roboto', sans-serif;
-            background-color: #f4f7fa;
-            color: var(--text-color);
-            line-height: 1.6;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-        
-        .login-container {
-            max-width: 420px;
-            margin: auto;
-            padding: 2rem;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: var(--shadow);
-        }
-        
-        .logo-container {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-        
-        .logo {
-            max-height: 120px;
-            max-width: 100%;
-        }
-        
-        h1 {
-            text-align: center;
-            color: var(--primary-color);
-            margin-bottom: 1.5rem;
-            font-weight: 500;
-        }
-        
-        .form-group {
-            margin-bottom: 1.2rem;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: var(--dark-color);
-        }
-        
-        input[type="text"],
-        input[type="password"] {
-            width: 100%;
-            padding: 0.75rem;
-            font-size: 1rem;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            transition: border-color 0.3s;
-        }
-        
-        input[type="text"]:focus,
-        input[type="password"]:focus {
-            border-color: var(--secondary-color);
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.25);
-        }
-        
-        .btn {
-            display: block;
-            width: 100%;
-            font-weight: 500;
-            text-align: center;
-            white-space: nowrap;
-            vertical-align: middle;
-            user-select: none;
-            border: 1px solid transparent;
-            padding: 0.75rem 1.5rem;
-            font-size: 1rem;
-            line-height: 1.5;
-            border-radius: 4px;
-            transition: all 0.15s ease-in-out;
-            cursor: pointer;
-            background-color: var(--primary-color);
-            color: white;
-        }
-        
-        .btn:hover {
-            background-color: #004494;
-        }
-        
-        .error-message {
-            color: var(--danger-color);
-            background-color: rgba(220, 53, 69, 0.1);
-            padding: 0.75rem;
-            border-radius: 4px;
-            margin-bottom: 1.2rem;
-            font-size: 0.9rem;
-        }
-        
-        footer {
-            text-align: center;
-            padding: 1rem 0;
-            margin-top: auto;
-            color: #6c757d;
-            font-size: 0.9rem;
-        }
-    </style>
-</head>
-<body>
-    <div class="login-container">
-        <div class="logo-container">
-            <img src="/static/logo.png" alt="Logo da Sysmex" class="logo">
-        </div>
-        
-        <h1>Cadastro de Materiais</h1>
-        
-        {% if error %}
-        <div class="error-message">
-            <i class="fas fa-exclamation-triangle"></i> {{ error }}
-        </div>
-        {% endif %}
-        
-        <form method="POST" action="{{ url_for('login') }}">
-            <div class="form-group">
-                <label for="username">Usuário</label>
-                <input type="text" id="username" name="username" required autofocus>
-            </div>
-            <div class="form-group">
-                <label for="password">Senha</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-            <button type="submit" class="btn">
-                <i class="fas fa-sign-in-alt"></i> Entrar
-            </button>
-        </form>
-    </div>
-    <footer>
-        <p>&copy; 2025 Sysmex Brasil. Todos os direitos reservados.</p>
-    </footer>
-</body>
-</html>""")
-            logger.info("Template login.html criado")
-        
-        return jsonify({"success": True, "message": "Templates criados/verificados"})
-        
-    except Exception as e:
-        logger.exception(f"Erro ao criar templates: {str(e)}")
-        return jsonify({"success": False, "error": str(e)})
 
 if __name__ == '__main__':
     # Garantir que os diretórios existam
