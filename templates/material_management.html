@@ -547,11 +547,9 @@
                 </div>
             </div>
             
-            <div class="table-container">
-                <table id="materialsTable">
+            <div class="table-container">                <table id="materialsTable">
                     <thead>
                         <tr>
-                            <th>ID</th>
                             <th>Código</th>
                             <th>Nome/Descrição</th>
                             <th>Status</th>
@@ -559,15 +557,14 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Materials will be added here dynamically -->
-                        <tr>
-                            <td colspan="5" class="loading-spinner" id="loadingMessage" style="display:none;">
+                        <!-- Materials will be added here dynamically -->                        <tr>
+                            <td colspan="4" class="loading-spinner" id="loadingMessage" style="display:none;">
                                 <i class="fas fa-spinner fa-spin fa-2x"></i>
                                 <p>Carregando materiais...</p>
                             </td>
                         </tr>
                         <tr id="noData">
-                            <td colspan="5" style="text-align: center;">
+                            <td colspan="4" style="text-align: center;">
                                 Utilize os filtros acima para buscar materiais
                             </td>
                         </tr>
@@ -589,11 +586,10 @@
                 <button class="close-btn">&times;</button>
             </div>
             <div class="modal-body">
-                <form id="editForm">
-                    <input type="hidden" id="edit_materialId">
+                <form id="editForm">                    <input type="hidden" id="edit_materialId">
                     <div class="form-group">
                         <label for="edit_materialIdExt">Código do Material *</label>
-                        <input type="text" id="edit_materialIdExt" required>
+                        <input type="text" id="edit_materialIdExt" required readonly style="background-color: #f0f0f0; cursor: not-allowed;">
                     </div>
                     <div class="form-group">
                         <label for="edit_nome">Nome/Descrição do Material *</label>
@@ -737,15 +733,11 @@
                 }
                 
                 noData.style.display = 'none';
-                
-                // Create rows for each material
+                  // Create rows for each material
                 materials.forEach(material => {
                     const row = materialsTable.insertRow();
                     
                     // Create text content
-                    const idCell = row.insertCell();
-                    idCell.textContent = material.materialId;
-                    
                     const codeCell = row.insertCell();
                     codeCell.textContent = material.materialIdExt;
                     
