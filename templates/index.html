@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de materiais</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #0056b3;
+            --secondary-color: #4a90e2;
+            --accent-color: #28a745;
+            --danger-color: #dc3545;
+            --dark-color: #343a40;
+            --light-color: #f8f9fa;
+            --border-color: #dee2e6;
+            --text-color: #333;
+            --shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f7fa;
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+        
+        .wrapper {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+        
+        header {
+            background-color: white;
+            box-shadow: var(--shadow);
+            padding: 1rem 0;
+            margin-bottom: 2rem;
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem 0;
+        }
+        
+        .logo {
+            max-height: 120px; /* Increased from 60px to 120px */
+            max-width: 100%;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+        
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+            padding: 1.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--dark-color);
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 0.75rem;
+            font-size: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus {
+            border-color: var(--secondary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.25);
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .checkbox-group label {
+            margin-bottom: 0;
+            margin-left: 0.5rem;
+            cursor: pointer;
+        }
+        
+        .btn {
+            display: inline-block;
+            font-weight: 500;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: middle;
+            user-select: none;
+            border: 1px solid transparent;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            border-radius: 4px;
+            transition: all 0.15s ease-in-out;
+            cursor: pointer;
+        }
+        
+        .btn-primary {
+            color: white;
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: #004494;
+            border-color: #004494;
+        }
+        
+        .btn-success {
+            color: white;
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+        
+        .btn-success:hover {
+            background-color: #218838;
+            border-color: #1e7e34;
+        }
+        
+        .btn-danger {
+            color: white;
+            background-color: var(--danger-color);
+            border-color: var(--danger-color);
+        }
+        
+        .btn-danger:hover {
+            background-color: #c82333;
+            border-color: #bd2130;
+        }
+        
+        .btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+        
+        .action-buttons {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 1rem;
+        }
+        
+        .counter {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: 500;
+            margin: 1rem 0;
+            display: inline-block;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 2px 3px rgba(0,0,0,0.1);
+        }
+        
+        table th, table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        table th {
+            background-color: #f8f9fa;
+            font-weight: 500;
+            color: var(--dark-color);
+        }
+        
+        table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        table tr:hover {
+            background-color: #f1f3f5;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            margin-bottom: 1.5rem;
+        }
+        
+        .delete-btn {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.9rem;
+        }
+        
+        .error {
+            color: var(--danger-color);
+            font-size: 0.875rem;
+            margin-top: 0.375rem;
+            display: none;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 1rem 0;
+            margin-top: 2rem;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+            }
+            
+            table th, table td {
+                padding: 0.75rem;
+            }
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 500;
+            color: var(--primary-color);
+            margin: 0;
+        }
+        
+        .upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 4px;
+            padding: 1.5rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            background-color: var(--light-color);
+            transition: border-color 0.3s;
+        }
+        
+        .upload-area:hover {
+            border-color: var(--secondary-color);
+        }
+        
+        .upload-icon {
+            font-size: 2.5rem;
+            color: var(--secondary-color);
+            margin-bottom: 1rem;
+        }
+        
+        .upload-text {
+            margin-bottom: 1rem;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .import-btn {
+            margin-left: 0.5rem;
+        }
+        
+        .instructions {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 4px;
+            border-left: 4px solid var(--secondary-color);
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+        
+        .instructions ul {
+            padding-left: 1.5rem;
+            margin: 0.5rem 0;
+        }
+        
+        .instruction-title {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 1.5rem;
+        }
+        
+        .tab {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .tab.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .btn-info {
+            color: white;
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+        
+        .btn-info:hover {
+            background-color: #357ebd;
+            border-color: #357ebd;
+        }
+        
+        .btn-outline-primary {
+            color: var(--primary-color);
+            background-color: transparent;
+            border-color: var(--primary-color);
+        }
+        
+        .btn-outline-primary:hover {
+            color: white;
+            background-color: var(--primary-color);
+        }
+        
+        .processing-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .processing-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+        
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid var(--primary-color);
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="wrapper">
+            <div class="logo-container">
+                <img src="/static/logo.png" alt="Logo da Empresa" class="logo">
+            </div>
+        </div>
+    </header>
+    
+    <div class="wrapper">
+        <div class="container">
+            <h1>Cadastro de Materiais</h1>
+            
+            <div class="tabs">
+                <div class="tab active" data-tab="single">Cadastro Individual</div>
+                <div class="tab" data-tab="batch">Importação em Lote</div>
+            </div>
+            
+            <div id="singleTab" class="tab-content active">
+                <div class="card">
+                    <div class="form-group">
+                        <label for="materialCode">Código do Material *</label>
+                        <input type="text" id="materialCode" required>
+                        <div id="codeError" class="error">O código do material é obrigatório.</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="materialDescription">Descrição do Material *</label>
+                        <input type="text" id="materialDescription" required>
+                        <div id="descError" class="error">A descrição do material é obrigatória.</div>
+                    </div>
+                    
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="blockMaterial">
+                        <label for="blockMaterial">Aplicar bloqueio?</label>
+                    </div>
+                    
+                    <div class="action-buttons">
+                        <button id="addMaterial" class="btn btn-success">
+                            <i class="fas fa-plus"></i> Adicionar Material
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="batchTab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Importação em Lote via CSV</h3>
+                    </div>
+                    
+                    <div class="instructions">
+                        <div class="instruction-title">
+                            <i class="fas fa-info-circle"></i> Como importar materiais em lote:
+                        </div>
+                        <ul>
+                            <li>Baixe o template CSV clicando no botão abaixo</li>
+                            <li>Preencha o arquivo com os códigos e descrições dos materiais</li>
+                            <li>Para marcar um material como bloqueado, coloque "X" na coluna "Bloqueio"</li>
+                            <li>Para materiais sem bloqueio, deixe a coluna "Bloqueio" vazia</li>
+                            <li>Salve o arquivo e faça o upload na área indicada</li>
+                        </ul>
+                    </div>
+                    
+                    <button id="downloadTemplate" class="btn btn-info">
+                        <i class="fas fa-download"></i> Baixar Template CSV
+                    </button>
+                    
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-icon">
+                            <i class="fas fa-file-csv"></i>
+                        </div>
+                        <div class="upload-text">
+                            Arraste e solte o arquivo CSV aqui ou clique para selecionar
+                        </div>
+                        <input type="file" id="csvFileInput" class="file-input" accept=".csv">
+                        <button class="btn btn-outline-primary">
+                            <i class="fas fa-folder-open"></i> Selecionar Arquivo
+                        </button>
+                    </div>
+                    
+                    <div class="action-buttons">
+                        <button id="processCSV" class="btn btn-success" disabled>
+                            <i class="fas fa-file-import"></i> Importar Materiais
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="materialsCounter" class="counter">
+                <i class="fas fa-list"></i> Materiais adicionados: 0
+            </div>
+            
+            <div class="table-container">
+                <table id="materialsTable">
+                    <thead>
+                        <tr>
+                            <th>Grupo Mat.</th>
+                            <th>Descr.Grupo</th>
+                            <th>Descr.SubG</th>
+                            <th>Cód. Material</th>
+                            <th>Tipo Material</th>
+                            <th>Unidade Medida</th>
+                            <th>Descrição Material</th>
+                            <th>Cód. Bloqueio</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Materials will be added here dynamically -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <button id="generateCSV" class="btn btn-primary" disabled>
+                <i class="fas fa-file-csv"></i> Gerar CSV
+            </button>
+        </div>
+    </div>
+    
+    <div id="processingOverlay" class="processing-overlay">
+        <div class="processing-content">
+            <div class="spinner"></div>
+            <div id="processingMessage">Processando arquivo...</div>
+        </div>
+    </div>
+    
+    <footer>
+        <div class="wrapper">
+            <p>&copy; 2025 Sysmex Brasil. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const materials = [];
+            const addMaterialBtn = document.getElementById('addMaterial');
+            const generateCSVBtn = document.getElementById('generateCSV');
+            const materialsTable = document.getElementById('materialsTable').getElementsByTagName('tbody')[0];
+            const materialsCounter = document.getElementById('materialsCounter');
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            const downloadTemplateBtn = document.getElementById('downloadTemplate');
+            const uploadArea = document.getElementById('uploadArea');
+            const csvFileInput = document.getElementById('csvFileInput');
+            const processCSVBtn = document.getElementById('processCSV');
+            const processingOverlay = document.getElementById('processingOverlay');
+            const processingMessage = document.getElementById('processingMessage');
+            
+            // Tab switching functionality
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs and contents
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(c => c.classList.remove('active'));
+                    
+                    // Add active class to clicked tab and corresponding content
+                    this.classList.add('active');
+                    const tabName = this.getAttribute('data-tab');
+                    document.getElementById(tabName + 'Tab').classList.add('active');
+                });
+            });
+            
+            // Download template button
+            downloadTemplateBtn.addEventListener('click', function() {
+                window.location.href = '/download_template';
+            });
+            
+            // File input change handler
+            csvFileInput.addEventListener('change', validateCsvFile);
+            
+            // Drag and drop functionality
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.style.borderColor = 'var(--secondary-color)';
+            });
+            
+            uploadArea.addEventListener('dragleave', function() {
+                this.style.borderColor = 'var(--border-color)';
+            });
+            
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.style.borderColor = 'var(--border-color)';
+                
+                if (e.dataTransfer.files.length) {
+                    csvFileInput.files = e.dataTransfer.files;
+                    validateCsvFile();
+                }
+            });
+            
+            /**
+             * Validates that the selected file is a CSV and updates the UI accordingly
+             */
+            function validateCsvFile() {
+                const fileInput = csvFileInput;
+                
+                if (fileInput.files && fileInput.files[0]) {
+                    const file = fileInput.files[0];
+                    
+                    if (!file.name.toLowerCase().endsWith('.csv')) {
+                        alert('Por favor, selecione um arquivo CSV válido.');
+                        fileInput.value = '';
+                        processCSVBtn.disabled = true;
+                        return;
+                    }
+                    
+                    uploadArea.querySelector('.upload-text').textContent = `Arquivo selecionado: ${file.name}`;
+                    processCSVBtn.disabled = false;
+                }
+            }
+            
+            /**
+             * Handles the CSV processing and import
+             */
+            processCSVBtn.addEventListener('click', function() {
+                if (!csvFileInput.files || !csvFileInput.files[0]) {
+                    return;
+                }
+                
+                const formData = new FormData();
+                formData.append('file', csvFileInput.files[0]);
+                
+                // Show processing overlay
+                processingOverlay.style.display = 'flex';
+                processingMessage.textContent = 'Processando arquivo...';
+                
+                fetch('/upload_csv', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Erro de rede: ${response.status} - ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    
+                    if (data.materials && data.materials.length > 0) {
+                        // Add imported materials to our materials array
+                        const importedMaterials = data.materials;
+                        
+                        importedMaterials.forEach(material => {
+                            materials.push(material);
+                        });
+                        
+                        // Update table with all materials
+                        updateMaterialsTable();
+                        
+                        // Show success message
+                        processingMessage.textContent = `Importação concluída! ${importedMaterials.length} materiais adicionados.`;
+                        setTimeout(() => {
+                            processingOverlay.style.display = 'none';
+                            // Switch to single tab to see the table
+                            tabs[0].click();
+                        }, 2000);
+                        
+                        // Reset file input
+                        csvFileInput.value = '';
+                        uploadArea.querySelector('.upload-text').textContent = 'Arraste e solte o arquivo CSV aqui ou clique para selecionar';
+                        processCSVBtn.disabled = true;
+                    } else {
+                        throw new Error('Nenhum material válido encontrado no arquivo.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao processar CSV:', error);
+                    processingMessage.textContent = `Erro: ${error.message}`;
+                    setTimeout(() => {
+                        processingOverlay.style.display = 'none';
+                    }, 2000);
+                });
+            });
+            
+            // Function to update the materials table
+            function updateMaterialsTable() {
+                // Clear the table
+                while (materialsTable.firstChild) {
+                    materialsTable.removeChild(materialsTable.firstChild);
+                }
+                
+                // Add all materials to the table
+                materials.forEach((material, idx) => {
+                    const row = materialsTable.insertRow();
+                    row.innerHTML = `
+                        <td>0050000300</td>
+                        <td>Serviços de Manutenção</td>
+                        <td>Peças</td>
+                        <td>${material.code}</td>
+                        <td>FERT</td>
+                        <td>EA</td>
+                        <td>${material.description}</td>
+                        <td>${material.blocked ? 'X' : ''}</td>
+                        <td><button class="btn btn-danger delete-btn" data-index="${idx}">
+                            <i class="fas fa-trash"></i>
+                        </button></td>
+                    `;
+                });
+                
+                // Update counter
+                materialsCounter.innerHTML = `<i class="fas fa-list"></i> Materiais adicionados: ${materials.length}`;
+                
+                // Enable/disable generate button
+                generateCSVBtn.disabled = materials.length === 0;
+            }
+            
+            // Event listener for Add Material button
+            addMaterialBtn.addEventListener('click', function() {
+                const codeInput = document.getElementById('materialCode');
+                const descInput = document.getElementById('materialDescription');
+                const blockCheckbox = document.getElementById('blockMaterial');
+                const codeError = document.getElementById('codeError');
+                const descError = document.getElementById('descError');
+                
+                // Reset errors
+                codeError.style.display = 'none';
+                descError.style.display = 'none';
+                
+                // Validate inputs
+                let isValid = true;
+                
+                if (!codeInput.value.trim()) {
+                    codeError.style.display = 'block';
+                    isValid = false;
+                }
+                
+                if (!descInput.value.trim()) {
+                    descError.style.display = 'block';
+                    isValid = false;
+                }
+                
+                if (!isValid) return;
+                
+                // Add material to array
+                const material = {
+                    code: codeInput.value.trim(),
+                    description: descInput.value.trim(),
+                    blocked: blockCheckbox.checked
+                };
+                
+                materials.push(material);
+                
+                // Update table
+                updateMaterialsTable();
+                
+                // Clear form
+                codeInput.value = '';
+                descInput.value = '';
+                blockCheckbox.checked = false;
+                codeInput.focus();
+            });
+            
+            // Event delegation for delete buttons
+            materialsTable.addEventListener('click', function(e) {
+                if (e.target.classList.contains('delete-btn') || e.target.parentElement.classList.contains('delete-btn')) {
+                    const button = e.target.classList.contains('delete-btn') ? e.target : e.target.parentElement;
+                    const index = parseInt(button.dataset.index);
+                    materials.splice(index, 1);
+                    
+                    // Update table
+                    updateMaterialsTable();
+                }
+            });
+            
+            // Event listener for Generate CSV button
+            generateCSVBtn.addEventListener('click', function() {
+                if (materials.length === 0) return;
+                
+                fetch('/generate_csv', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ materials }),
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.blob();
+                    }
+                    throw new Error('Network response was not ok.');
+                })
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    
+                    // Create filename with timestamp
+                    const now = new Date();
+                    const timestamp = now.getFullYear().toString() +
+                                     (now.getMonth() + 1).toString().padStart(2, '0') +
+                                     now.getDate().toString().padStart(2, '0') + '_' +
+                                     now.getHours().toString().padStart(2, '0') +
+                                     now.getMinutes().toString().padStart(2, '0') +
+                                     now.getSeconds().toString().padStart(2, '0');
+                    
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `MAT_${timestamp}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                })
+                .catch(error => {
+                    console.error('Error generating CSV:', error);
+                    alert('Ocorreu um erro ao gerar o CSV. Por favor, tente novamente.');
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+``` 
