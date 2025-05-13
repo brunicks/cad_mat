@@ -270,11 +270,60 @@ def submit_material():
             user_log("error", "Tentativa de envio de material sem dados")
             return jsonify({'success': False, 'error': 'Dados do material nao fornecidos'}), 400
         
+        # Obter o código do material
+        codigo = material_data.get('materialIdExt', '')
+        nome = material_data.get('nome', '')
+        
+        if not codigo:
+            user_log("error", "Tentativa de envio de material sem código")
+            return jsonify({'success': False, 'error': 'Código do material é obrigatório'}), 400
+        
+        # Verificar se o material já existe - buscar pelo código
+        search_filter = {
+            'materialIdExt': codigo
+        }
+        
+        # Configurar cabeçalhos com token de autenticacao
+        headers = {
+            'Authorization': f"Bearer {session['user_token']}",
+            'Content-Type': 'application/json'
+        }
+        
+        # Buscar material existente
+        search_response = requests.post(
+            MATERIAL_SEARCH_ENDPOINT, 
+            json=search_filter, 
+            headers=headers
+        )
+        
+        existing_material_id = 0
+        
+        if search_response.status_code == 200:
+            try:
+                search_result = search_response.json()
+                
+                # Verificar se encontrou algum material
+                if isinstance(search_result, list):
+                    # API retornou lista direta
+                    if len(search_result) > 0:
+                        # Usar o primeiro material encontrado (deve ser único pelo código)
+                        existing_material_id = search_result[0].get('materialId', 0)
+                        user_log("info", f"Material com código {codigo} já existe (ID={existing_material_id}). Atualizando.")
+                elif search_result.get('result', False) and search_result.get('items'):
+                    # API retornou objeto com lista em 'items'
+                    items = search_result.get('items', [])
+                    if len(items) > 0:
+                        existing_material_id = items[0].get('materialId', 0)
+                        user_log("info", f"Material com código {codigo} já existe (ID={existing_material_id}). Atualizando.")
+            except Exception as e:
+                # Se der erro na busca, apenas seguir com cadastro normal
+                user_log("warning", f"Erro ao verificar material existente: {str(e)}")
+        
         # Completar o payload com valores padrao para a API
         complete_material = {
-            "materialId": 0,  # auto increment
-            "materialIdExt": material_data.get('materialIdExt', ''),
-            "nome": material_data.get('nome', ''),
+            "materialId": existing_material_id,  # Se for 0, cria novo; se não, atualiza existente
+            "materialIdExt": codigo,
+            "nome": nome,
             "tipo": "FERT",  # valor padrao
             "matGrupoId": 7,  # valor padrao
             "uniMedida": "EA",  # valor padrao
@@ -282,9 +331,8 @@ def submit_material():
         }
         
         # Log com informacões completas do material e usuário
-        codigo = complete_material["materialIdExt"]
-        nome = complete_material["nome"]
-        user_log("info", f"ENVIANDO MATERIAL: Código={codigo}, Nome={nome}")
+        action = "ATUALIZANDO" if existing_material_id > 0 else "ENVIANDO"
+        user_log("info", f"{action} MATERIAL: Código={codigo}, Nome={nome}")
         
         # Configurar cabecalhos com token de autenticacao
         headers = {
@@ -303,14 +351,15 @@ def submit_material():
         if response.status_code == 200:
             try:
                 response_data = response.json()
-                
-                # Verificar se a API indica sucesso
+                  # Verificar se a API indica sucesso
                 if response_data.get('result', False):
-                    user_log("info", f"MATERIAL CADASTRADO: Código={codigo}, Nome={nome}")
+                    action = "atualizado" if existing_material_id > 0 else "cadastrado"
+                    user_log("info", f"MATERIAL {action.upper()}: Código={codigo}, Nome={nome}")
                     return jsonify({
                         'success': True,
-                        'message': 'Material cadastrado com sucesso',
-                        'data': response_data
+                        'message': f'Material {action} com sucesso',
+                        'data': response_data,
+                        'wasUpdated': existing_material_id > 0
                     })
                 else:
                     error_msg = response_data.get('message', 'Erro nao especificado pela API')

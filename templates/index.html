@@ -493,10 +493,13 @@
                 materials.forEach((material, idx) => {
                     const row = materialsTable.insertRow();
                     
-                    let statusBadge;
-                    switch(material.status) {
+                    let statusBadge;                    switch(material.status) {
                         case 'success':
-                            statusBadge = `<span class="status-badge success"><i class="fas fa-check-circle"></i> Sucesso</span>`;
+                            if (material.wasUpdated) {
+                                statusBadge = `<span class="status-badge success"><i class="fas fa-check-circle"></i> Atualizado</span>`;
+                            } else {
+                                statusBadge = `<span class="status-badge success"><i class="fas fa-check-circle"></i> Cadastrado</span>`;
+                            }
                             break;
                         case 'error':
                             statusBadge = `<span class="status-badge error"><i class="fas fa-exclamation-circle"></i> Erro</span>`;
@@ -558,20 +561,57 @@
                     descError.style.display = 'block';
                     valid = false;
                 }
-                
-                if (valid) {
-                    const material = {
-                        materialIdExt: codeInput.value.trim(),
-                        nome: descInput.value.trim(),
-                        status: 'pending'
-                    };
+                  if (valid) {
+                    const code = codeInput.value.trim();
+                    const name = descInput.value.trim();
                     
-                    materials.push(material);
-                    updateMaterialsTable();
+                    // Verificar se já existe material com o mesmo código na lista
+                    const existingIndex = materials.findIndex(m => m.materialIdExt === code);
                     
-                    // Reset form
-                    codeInput.value = '';
-                    descInput.value = '';
+                    if (existingIndex !== -1) {
+                        // Material com mesmo código já existe na lista
+                        if (materials[existingIndex].status === 'pending') {
+                            // Se está pendente, atualizar
+                            if (confirm(`Já existe um material com o código ${code} na lista de pendentes. Deseja atualizá-lo?`)) {
+                                materials[existingIndex].nome = name;
+                                updateMaterialsTable();
+                                
+                                // Reset form
+                                codeInput.value = '';
+                                descInput.value = '';
+                            }
+                        } else if (materials[existingIndex].status === 'processing') {
+                            alert(`O material com código ${code} está sendo processado no momento. Aguarde a finalização.`);
+                        } else if (materials[existingIndex].status === 'success') {
+                            alert(`O material com código ${code} já foi enviado com sucesso. Utilize a tela de Gestão de Materiais para editar um material já cadastrado.`);
+                        } else if (materials[existingIndex].status === 'error') {
+                            // Perguntar se quer tentar novamente
+                            if (confirm(`O material com código ${code} teve erro no envio anterior. Deseja tentar novamente com a nova descrição?`)) {
+                                materials[existingIndex].nome = name;
+                                materials[existingIndex].status = 'pending';
+                                materials[existingIndex].error = undefined;
+                                updateMaterialsTable();
+                                
+                                // Reset form
+                                codeInput.value = '';
+                                descInput.value = '';
+                            }
+                        }
+                    } else {
+                        // Se não existe, adicionar novo
+                        const material = {
+                            materialIdExt: code,
+                            nome: name,
+                            status: 'pending'
+                        };
+                        
+                        materials.push(material);
+                        updateMaterialsTable();
+                        
+                        // Reset form
+                        codeInput.value = '';
+                        descInput.value = '';
+                    }
                 }
             });
             
@@ -620,10 +660,13 @@
                             const index = materials.findIndex(m => 
                                 m.materialIdExt === material.materialIdExt && 
                                 m.nome === material.nome);
-                            
-                            if (index !== -1) {
+                              if (index !== -1) {
                                 materials[index].status = result.success ? 'success' : 'error';
-                                if (!result.success) {
+                                
+                                if (result.success) {
+                                    // Adicionar informação se foi atualizado
+                                    materials[index].wasUpdated = result.wasUpdated;
+                                } else {
                                     materials[index].error = result.error;
                                 }
                             }
@@ -647,18 +690,19 @@
                             };
                         });
                 });
-                
-                Promise.all(promises)
+                  Promise.all(promises)
                     .then(results => {
                         const successCount = results.filter(r => r.success).length;
                         const errorCount = results.filter(r => !r.success).length;
+                        const updatedCount = results.filter(r => r.success && r.wasUpdated).length;
+                        const newCount = successCount - updatedCount;
                         
                         this.innerHTML = `<i class="fas fa-paper-plane"></i> Enviar`;
                         this.disabled = false;
                         
                         updateMaterialsTable();
                         
-                        alert(`Envio concluído: ${successCount} sucesso, ${errorCount} erros`);
+                        alert(`Envio concluído: ${successCount} sucesso (${newCount} novos, ${updatedCount} atualizados), ${errorCount} erros`);
                     })
                     .catch(error => {
                         this.innerHTML = `<i class="fas fa-paper-plane"></i> Enviar`;
@@ -705,8 +749,7 @@
                     }
                 }
             });
-            
-            // Function to submit a material to the API
+              // Function to submit a material to the API
             async function submitMaterialToApi(material) {
                 try {
                     const apiPayload = {
@@ -726,6 +769,7 @@
                     
                     return {
                         success: result.success,
+                        wasUpdated: result.wasUpdated,
                         error: result.error || (result.data && result.data.message) || 'Erro desconhecido'
                     };
                 } catch (error) {

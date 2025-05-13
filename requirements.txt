@@ -1,0 +1,21 @@
+# Flask e suas dependências
+Flask==2.2.3
+Werkzeug==2.2.3
+
+# Manipulação de requisições HTTP
+requests==2.28.2
+
+# Geração de arquivos Excel
+openpyxl==3.1.2
+
+# Outras bibliotecas padrão usadas no projeto
+# (já incluídas no Python, não precisam ser instaladas separadamente):
+# - datetime
+# - logging
+# - os
+# - base64
+# - json
+# - sys
+# - io
+# - tempfile
+# - functools
