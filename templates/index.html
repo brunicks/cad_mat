@@ -50,41 +50,41 @@
             padding: 1rem 0;
             margin-bottom: 2rem;
         }
-        
-        .logo-container {
+          .logo-container {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 1rem 0;
+            padding: 0.8rem 0;
         }
-        
-        .logo {
-            max-height: 100px;
+          .logo {
+            max-height: 60px;
             max-width: 100%;
         }
         
         .user-info {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 15px;
         }
         
         .user-info i {
             color: var(--primary-color);
             font-size: 1.5rem;
+            margin-right: 5px;
         }
         
         .nav-links {
             display: flex;
-            gap: 15px;
+            margin-left: 20px;
         }
         
         .nav-links a {
             color: var(--dark-color);
             text-decoration: none;
-            padding: 5px 10px;
+            padding: 8px 20px;
             border-radius: 4px;
             transition: var(--transition);
+            margin: 0 5px;
         }
         
         .nav-links a:hover {
@@ -94,6 +94,7 @@
         .nav-links a.active {
             color: var(--primary-color);
             font-weight: 500;
+            background-color: rgba(0, 86, 179, 0.1);
         }
         
         .container {
@@ -356,56 +357,6 @@
             box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
         }
         
-        .tabs {
-            display: flex;
-            border-bottom: 1px solid var(--border-color);
-            margin-bottom: 1.5rem;
-            background-color: #f8f9fa;
-            border-radius: 8px 8px 0 0;
-            overflow: hidden;
-        }
-        
-        .tab {
-            padding: 1rem 1.5rem;
-            cursor: pointer;
-            transition: var(--transition);
-            font-weight: 500;
-            text-align: center;
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .tab i {
-            margin-right: 6px;
-            font-size: 1.1rem;
-        }
-        
-        .tab.active {
-            background-color: white;
-            color: var(--primary-color);
-            box-shadow: 0 -3px 0 var(--primary-color) inset;
-        }
-        
-        .tab:not(.active):hover {
-            background-color: rgba(255, 255, 255, 0.5);
-        }
-        
-        .tab-content {
-            display: none;
-        }
-        
-        .tab-content.active {
-            display: block;
-            animation: fadeIn 0.3s ease-in-out;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
         @media (max-width: 768px) {
             .container {
                 padding: 1.5rem;
@@ -420,21 +371,18 @@
                 width: 100%;
             }
             
-            .tabs {
-                flex-direction: column;
-                border-radius: 8px;
-            }
-            
-            .tab {
-                border-bottom: 1px solid var(--border-color);
-            }
-            
-            .tab.active {
-                box-shadow: 3px 0 0 var(--primary-color) inset;
-            }
-            
             table th, table td {
                 padding: 0.75rem;
+            }
+            
+            .user-info {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .nav-links {
+                margin-top: 10px;
+                margin-left: 0;
             }
         }
     </style>
@@ -445,8 +393,10 @@
             <div class="logo-container">
                 <img src="/static/logo.png" alt="Logo da Empresa" class="logo">
                 <div class="user-info">
-                    <i class="fas fa-user-circle"></i>
-                    <span id="userName">{{ user_name }}</span>
+                    <div>
+                        <i class="fas fa-user-circle"></i>
+                        <span id="userName">{{ user_name }}</span>
+                    </div>
                     <div class="nav-links">
                         <a href="{{ url_for('index') }}" class="active">Cadastro de Materiais</a>
                         <a href="{{ url_for('material_management') }}">Gestão de Materiais</a>
@@ -461,55 +411,31 @@
         <div class="container">
             <h1>Cadastro de Materiais</h1>
             
-            <div class="tabs">
-                <div class="tab active" data-tab="single">
-                    <i class="fas fa-edit"></i> Cadastro Individual
+            <div class="card">
+                <div class="form-group">
+                    <label for="materialCode">Código do Material *</label>
+                    <input type="text" id="materialCode" required placeholder="Ex: 123456">
+                    <div id="codeError" class="error">O código do material é obrigatório.</div>
                 </div>
-                <div class="tab" data-tab="status">
-                    <i class="fas fa-chart-line"></i> Status de Envio
+                
+                <div class="form-group">
+                    <label for="materialDescription">Descrição do Material *</label>
+                    <input type="text" id="materialDescription" required placeholder="Ex: Reagente para análise">
+                    <div id="descError" class="error">A descrição do material é obrigatória.</div>
                 </div>
-            </div>
-            
-            <div id="singleTab" class="tab-content active">
-                <div class="card">
-                    <div class="form-group">
-                        <label for="materialCode">Código do Material *</label>
-                        <input type="text" id="materialCode" required placeholder="Ex: 123456">
-                        <div id="codeError" class="error">O código do material é obrigatório.</div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="materialDescription">Descrição do Material *</label>
-                        <input type="text" id="materialDescription" required placeholder="Ex: Reagente para análise">
-                        <div id="descError" class="error">A descrição do material é obrigatória.</div>
-                    </div>
-                    
-                    <div class="action-buttons">
-                        <button id="addMaterial" class="btn btn-success">
-                            <i class="fas fa-plus"></i> Adicionar Material
-                        </button>
-                        <button id="submitSingleMaterial" class="btn btn-primary">
-                            <i class="fas fa-paper-plane"></i> Enviar Material
-                        </button>
-                    </div>
+                
+                <div class="action-buttons">
+                    <button id="addMaterial" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Adicionar Material
+                    </button>
                 </div>
             </div>
             
-            <div id="statusTab" class="tab-content">
-                <div class="card">
-                    <h3>Status de Envio dos Materiais</h3>
-                    <div id="statusSummary">
-                        <div class="status-item">
-                            <span class="status-badge success"><i class="fas fa-check-circle"></i> Sucesso: <span id="successCount">0</span></span>
-                        </div>
-                        <div class="status-item">
-                            <span class="status-badge pending"><i class="fas fa-clock"></i> Pendente: <span id="pendingCount">0</span></span>
-                        </div>
-                        <div class="status-item">
-                            <span class="status-badge error"><i class="fas fa-exclamation-circle"></i> Erro: <span id="errorCount">0</span></span>
-                        </div>
-                    </div>
-                </div>
+            <!-- Contadores para uso interno, não visíveis -->
+            <div style="display: none">
+                <span id="successCount">0</span>
+                <span id="pendingCount">0</span>
+                <span id="errorCount">0</span>
             </div>
             
             <div id="materialsCounter" class="counter">
@@ -534,7 +460,7 @@
             
             <div class="action-buttons">
                 <button id="submitApiMaterials" class="btn btn-primary" disabled>
-                    <i class="fas fa-paper-plane"></i> Enviar Via API
+                    <i class="fas fa-paper-plane"></i> Enviar
                 </button>
                 <button id="clearMaterials" class="btn btn-danger" disabled>
                     <i class="fas fa-trash"></i> Limpar Lista
@@ -556,24 +482,6 @@
             const materialsCounter = document.getElementById('materialsCounter');
             const submitApiMaterialsBtn = document.getElementById('submitApiMaterials');
             const clearMaterialsBtn = document.getElementById('clearMaterials');
-            
-            // Tab switching functionality
-            const tabs = document.querySelectorAll('.tab');
-            const tabContents = document.querySelectorAll('.tab-content');
-            
-            tabs.forEach(tab => {
-                tab.addEventListener('click', function() {
-                    const tabId = this.getAttribute('data-tab');
-                    
-                    // Remove active class from all tabs and contents
-                    tabs.forEach(t => t.classList.remove('active'));
-                    tabContents.forEach(c => c.classList.remove('active'));
-                    
-                    // Add active class to the clicked tab and corresponding content
-                    this.classList.add('active');
-                    document.getElementById(`${tabId}Tab`).classList.add('active');
-                });
-            });
             
             // Function to update the materials table
             function updateMaterialsTable() {
@@ -618,7 +526,7 @@
                 
                 materialsCounter.innerHTML = `<i class="fas fa-list"></i> Materiais adicionados: ${materials.length}`;
                 
-                // Update status tab counters
+                // Update status counters (hidden now)
                 document.getElementById('successCount').textContent = materials.filter(m => m.status === 'success').length;
                 document.getElementById('pendingCount').textContent = materials.filter(m => m.status === 'pending' || m.status === 'processing').length;
                 document.getElementById('errorCount').textContent = materials.filter(m => m.status === 'error').length;
@@ -664,58 +572,6 @@
                     // Reset form
                     codeInput.value = '';
                     descInput.value = '';
-                }
-            });
-            
-            // Submit single material
-            document.getElementById('submitSingleMaterial').addEventListener('click', function() {
-                const codeInput = document.getElementById('materialCode');
-                const descInput = document.getElementById('materialDescription');
-                const codeError = document.getElementById('codeError');
-                const descError = document.getElementById('descError');
-                
-                // Reset errors
-                codeError.style.display = 'none';
-                descError.style.display = 'none';
-                
-                // Validate
-                let valid = true;
-                if (!codeInput.value.trim()) {
-                    codeError.style.display = 'block';
-                    valid = false;
-                }
-                
-                if (!descInput.value.trim()) {
-                    descError.style.display = 'block';
-                    valid = false;
-                }
-                
-                if (valid) {
-                    const material = {
-                        materialIdExt: codeInput.value.trim(),
-                        nome: descInput.value.trim()
-                    };
-                    
-                    submitMaterialToApi(material).then(result => {
-                        if (result.success) {
-                            material.status = 'success';
-                            materials.push({...material});
-                            updateMaterialsTable();
-                            
-                            // Reset form
-                            codeInput.value = '';
-                            descInput.value = '';
-                            
-                            alert('Material enviado com sucesso!');
-                        } else {
-                            material.status = 'error';
-                            material.error = result.error;
-                            materials.push({...material});
-                            updateMaterialsTable();
-                            
-                            alert(`Erro: ${result.error}`);
-                        }
-                    });
                 }
             });
             
@@ -797,7 +653,7 @@
                         const successCount = results.filter(r => r.success).length;
                         const errorCount = results.filter(r => !r.success).length;
                         
-                        this.innerHTML = `<i class="fas fa-paper-plane"></i> Enviar Via API`;
+                        this.innerHTML = `<i class="fas fa-paper-plane"></i> Enviar`;
                         this.disabled = false;
                         
                         updateMaterialsTable();
@@ -805,7 +661,7 @@
                         alert(`Envio concluído: ${successCount} sucesso, ${errorCount} erros`);
                     })
                     .catch(error => {
-                        this.innerHTML = `<i class="fas fa-paper-plane"></i> Enviar Via API`;
+                        this.innerHTML = `<i class="fas fa-paper-plane"></i> Enviar`;
                         this.disabled = false;
                         updateMaterialsTable(); // Garantir que a tabela seja atualizada mesmo com erro
                         alert(`Erro no envio: ${error.message}`);

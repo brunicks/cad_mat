@@ -50,40 +50,40 @@
             padding: 1rem 0;
             margin-bottom: 2rem;
         }
-        
-        .logo-container {
+          .logo-container {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 1rem 0;
+            padding: 0.8rem 0;
         }
-        
-        .logo {
-            max-height: 100px;
+          .logo {
+            max-height: 60px;
             max-width: 100%;
         }
-        
-        .user-info {
+          .user-info {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 15px;
         }
         
         .user-info i {
             color: var(--primary-color);
+            font-size: 1.5rem;
+            margin-right: 5px;
         }
         
         .nav-links {
             display: flex;
-            gap: 15px;
+            margin-left: 20px;
         }
         
         .nav-links a {
             color: var(--dark-color);
             text-decoration: none;
-            padding: 5px 10px;
+            padding: 8px 20px;
             border-radius: 4px;
             transition: var(--transition);
+            margin: 0 5px;
         }
         
         .nav-links a:hover {
@@ -93,6 +93,7 @@
         .nav-links a.active {
             color: var(--primary-color);
             font-weight: 500;
+            background-color: rgba(0, 86, 179, 0.1);
         }
         
         .container {
@@ -174,10 +175,16 @@
             transition: var(--transition);
             cursor: pointer;
         }
-        
-        .btn-sm {
+          .btn-sm {
             padding: 0.35rem 0.75rem;
             font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+            pointer-events: none;
         }
         
         .btn-primary {
@@ -434,15 +441,20 @@
             table th, table td {
                 padding: 0.75rem;
             }
-            
-            .nav-links {
+              .nav-links {
+                margin-top: 10px;
+                margin-left: 0;
                 flex-wrap: wrap;
             }
-            
-            .logo-container {
+              .logo-container {
                 flex-direction: column;
                 text-align: center;
-                gap: 10px;
+                gap: 15px;
+            }
+            
+            .user-info {
+                flex-direction: column;
+                align-items: flex-start;
             }
         }
         
@@ -482,14 +494,15 @@
         }
     </style>
 </head>
-<body>
-    <header>
+<body>    <header>
         <div class="wrapper">
             <div class="logo-container">
                 <img src="/static/logo.png" alt="Logo da Empresa" class="logo">
                 <div class="user-info">
-                    <i class="fas fa-user-circle"></i>
-                    <span id="userName">{{ user_name }}</span>
+                    <div>
+                        <i class="fas fa-user-circle"></i>
+                        <span id="userName">{{ user_name }}</span>
+                    </div>
                     <div class="nav-links">
                         <a href="{{ url_for('index') }}">Cadastro de Materiais</a>
                         <a href="{{ url_for('material_management') }}" class="active">Gestão de Materiais</a>
@@ -533,17 +546,20 @@
                     </div>
                 </form>
             </div>
-            
-            <div class="search-summary" style="display:none;">
-                <div class="total-items">Total: <span id="totalItems">0</span> materiais encontrados</div>
-                <div>
-                    <label for="pageSize">Itens por página:</label>
-                    <select id="pageSize">
-                        <option value="10">10</option>
-                        <option value="25" selected>25</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
-                    </select>
+              <div class="search-summary" style="display:none;">
+                <div class="total-items">Total: <span id="totalItems">0</span> materiais encontrados</div>                <div style="display: flex; align-items: center; gap: 15px;">
+                    <button id="exportExcel" class="btn btn-sm btn-success" title="Exportar resultados para Excel">
+                        <i class="fas fa-file-excel"></i> Exportar Excel
+                    </button>
+                    <div>
+                        <label for="pageSize">Itens por página:</label>
+                        <select id="pageSize">
+                            <option value="10">10</option>
+                            <option value="25" selected>25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
                 </div>
             </div>
             
@@ -846,8 +862,7 @@
                 }
                 pagination.appendChild(nextBtn);
             }
-            
-            // Go to specific page
+              // Go to specific page
             function goToPage(page) {
                 if (page < 1 || page > totalPages || page === currentPage) {
                     return;
@@ -856,6 +871,77 @@
                 currentPage = page;
                 searchMaterials();
             }
+              // Exportar para Excel
+            document.getElementById('exportExcel').addEventListener('click', function() {
+                // Mostrar alerta antes de começar o download
+                if (confirm('Deseja exportar os materiais para Excel? Isso pode demorar um pouco dependendo da quantidade de dados.')) {
+                    const exportBtn = this;
+                    // Desativar o botão e mostrar indicador de carregamento
+                    exportBtn.disabled = true;
+                    const originalHTML = exportBtn.innerHTML;
+                    exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exportando...';
+                    
+                    showAlert('info', 'Preparando arquivo para download... Aguarde!');
+                    
+                    // Usar os mesmos filtros da pesquisa atual
+                    const exportFilters = {...currentFilters};
+                    
+                    // Fazer a requisição fetch para obter o arquivo
+                    fetch('/api/export_materials', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(exportFilters)
+                    })
+                    .then(response => {
+                        // Restaurar o botão
+                        exportBtn.disabled = false;
+                        exportBtn.innerHTML = originalHTML;
+                        
+                        if (!response.ok) {
+                            // Se não for OK, tentar obter mensagem de erro
+                            return response.json().then(data => {
+                                throw new Error(data.error || 'Erro ao exportar materiais');
+                            });
+                        }
+                        
+                        // Aqui lidamos com o blob (arquivo binário)
+                        return response.blob();
+                    })
+                    .then(blob => {
+                        // Criar URL para download
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        
+                        // Criar um nome de arquivo com timestamp
+                        const date = new Date();
+                        const timestamp = date.toISOString().replace(/[:.]/g, '_');
+                        const filename = `materiais_${timestamp}.xlsx`;
+                        
+                        // Configurar elemento <a> para download
+                        a.style.display = 'none';
+                        a.href = url;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        
+                        // Acionar o download e limpar
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                        
+                        showAlert('success', 'Exportação concluída com sucesso!');
+                    })
+                    .catch(error => {
+                        // Restaurar o botão em caso de erro
+                        exportBtn.disabled = false;
+                        exportBtn.innerHTML = originalHTML;
+                        
+                        showAlert('danger', `Falha na exportação: ${error.message}`);
+                        console.error('Erro na exportação:', error);
+                    });
+                }
+            });
             
             // Open edit modal
             function openEditModal(material) {

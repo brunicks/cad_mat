@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, redirect, session, url_for
+from flask import Flask, render_template, request, jsonify, redirect, session, url_for, send_file
 import datetime
 import os
 import requests
@@ -6,6 +6,10 @@ import logging
 import base64
 import json
 import sys
+import io
+import tempfile
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from logging.handlers import RotatingFileHandler
 from functools import wraps
 
@@ -577,6 +581,229 @@ def update_material():
             }), 500
     except Exception as e:
         user_log("exception", f"EXCEcaO NA ATUALIZAcaO: Erro={str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Excecao ao processar requisicao: {str(e)}"
+        }), 500
+
+@app.route('/api/export_materials', methods=['POST'])
+@login_required
+def export_materials():
+    """Exporta a lista de materiais para um arquivo Excel"""
+    try:
+        # Obter filtros do request
+        filters = request.json or {}
+        
+        # Criar resumo dos filtros para log
+        filtros_resumo = []
+        if filters.get('materialIdExt'):
+            filtros_resumo.append(f"Código={filters['materialIdExt']}")
+        if 'ativo' in filters:
+            status = "ativos" if filters['ativo'] else "bloqueados"
+            filtros_resumo.append(f"Status={status}")
+        
+        # Para exportar, queremos todos os resultados, não apenas uma página
+        # Removemos paginação e definimos que queremos todos os registros
+        export_filters = {k: v for k, v in filters.items() if k not in ['pageNumber', 'pageSize']}
+        
+        # Log da exportação
+        filtros_str = ", ".join(filtros_resumo) if filtros_resumo else "sem filtros"        
+        user_log("info", f"EXPORTANDO MATERIAIS PARA EXCEL: {filtros_str}")
+        
+        # Configurar cabeçalhos com token de autenticação
+        headers = {
+            'Authorization': f"Bearer {session['user_token']}",
+            'Content-Type': 'application/json'
+        }
+        
+        # Enviar pesquisa para a API sem paginação para obter todos os registros
+        response = requests.post(
+            MATERIAL_SEARCH_ENDPOINT, 
+            json=export_filters, 
+            headers=headers
+        )
+        
+        # Processar resposta
+        if response.status_code != 200:
+            error_msg = f"Erro na comunicacao com a API: {response.status_code}"
+            
+            try:
+                # Tentar obter mensagem de erro do corpo da resposta
+                error_data = response.json()
+                if isinstance(error_data, dict) and 'message' in error_data:
+                    error_msg = error_data['message']
+            except:
+                # Se falhar ao obter mensagem JSON, usar o texto da resposta
+                if response.text:
+                    error_msg = f"{error_msg} - {response.text[:200]}"
+            
+            user_log("error", f"FALHA NA EXPORTACAO: Status={response.status_code}, Erro={error_msg}")
+            return jsonify({
+                'success': False,
+                'error': error_msg
+            }), 500
+        
+        # Analisar dados da resposta
+        try:
+            response_data = response.json()
+            
+            # Verificar o tipo da resposta - pode ser uma lista ou um objeto
+            if isinstance(response_data, list):
+                # API retornou diretamente a lista de materiais
+                materials = response_data
+            else:
+                # Formato esperado como objeto com result, items, etc.
+                if response_data.get('result', False):
+                    materials = response_data.get('items', [])
+                else:
+                    error_msg = response_data.get('message', 'Erro nao especificado pela API')
+                    user_log("error", f"FALHA NA EXPORTACAO: {filtros_str}, Erro={error_msg}")
+                    return jsonify({
+                        'success': False,
+                        'error': error_msg
+                    })
+        except Exception as e:
+            user_log("exception", f"ERRO AO PROCESSAR DADOS PARA EXPORTACAO: {filtros_str}, Erro={str(e)}")
+            return jsonify({
+                'success': False,
+                'error': f"Erro ao processar resposta: {str(e)}"
+            }), 500
+        
+        # Verificar se há dados para exportar
+        if not materials:
+            user_log("warning", f"EXPORTACAO VAZIA: {filtros_str}")
+            return jsonify({
+                'success': False,
+                'error': "Nenhum material encontrado para exportar"
+            }), 404
+        
+        # Verificar se há muitos registros (limite para evitar sobrecarga)
+        MAX_EXPORT = 10000  # Limite de registros para exportacao
+        total_materials = len(materials)
+        is_truncated = False
+        
+        if total_materials > MAX_EXPORT:
+            user_log("warning", f"EXPORTACAO MUITO GRANDE: {total_materials} registros. Limitando a {MAX_EXPORT}.")
+            materials = materials[:MAX_EXPORT]  # Limitar aos primeiros MAX_EXPORT registros
+            is_truncated = True
+        
+        # Criar arquivo Excel em memória
+        try:
+            # Criar workbook e selecionar a planilha ativa
+            wb = Workbook()
+            ws = wb.active
+            ws.title = "Materiais"
+            
+            # Definir estilos
+            header_font = Font(bold=True, color="FFFFFF")
+            header_fill = PatternFill(start_color="0056B3", end_color="0056B3", fill_type="solid")
+            header_alignment = Alignment(horizontal="center", vertical="center")
+            thin_border = Border(
+                left=Side(style='thin'), 
+                right=Side(style='thin'), 
+                top=Side(style='thin'), 
+                bottom=Side(style='thin')
+            )
+            
+            warning_font = Font(bold=True, color="FF0000")
+            
+            row_num = 1
+            
+            # Adicionar informação sobre limitação de registros se necessário
+            if is_truncated:
+                warning_text = f"* ATENCAO: Exportacao limitada a {MAX_EXPORT} de {total_materials} registros para evitar sobrecarga."
+                warning_cell = ws.cell(row=row_num, column=1)
+                warning_cell.value = warning_text
+                warning_cell.font = warning_font
+                ws.merge_cells(start_row=row_num, start_column=1, end_row=row_num, end_column=5)
+                row_num += 1
+            
+            # Cabeçalhos
+            headers = ["Código", "Nome/Descrição", "Status", "Tipo", "Unidade"]
+            for col_num, header in enumerate(headers, 1):
+                cell = ws.cell(row=row_num, column=col_num)
+                cell.value = header
+                cell.font = header_font
+                cell.fill = header_fill
+                cell.alignment = header_alignment
+                cell.border = thin_border
+            
+            # Adicionar dados - começando da próxima linha após os cabeçalhos
+            row_num += 1  # Incrementa para a primeira linha de dados
+            
+            for material in materials:
+                # Código
+                cell = ws.cell(row=row_num, column=1)
+                cell.value = material.get('materialIdExt', '')
+                cell.border = thin_border
+                
+                # Nome/Descrição
+                cell = ws.cell(row=row_num, column=2)
+                cell.value = material.get('nome', '')
+                cell.border = thin_border
+                
+                # Status
+                cell = ws.cell(row=row_num, column=3)
+                cell.value = "Ativo" if material.get('ativo', True) else "Bloqueado"
+                cell.border = thin_border
+                
+                # Tipo
+                cell = ws.cell(row=row_num, column=4)
+                cell.value = material.get('tipo', 'FERT')
+                cell.border = thin_border
+                
+                # Unidade
+                cell = ws.cell(row=row_num, column=5)
+                cell.value = material.get('uniMedida', 'EA')
+                cell.border = thin_border
+                
+                row_num += 1
+            
+            # Ajustar largura das colunas
+            for col in ws.columns:
+                max_length = 0
+                column = col[0].column_letter  # Obter letra da coluna
+                for cell in col:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(str(cell.value))
+                    except:
+                        pass
+                adjusted_width = (max_length + 2)
+                ws.column_dimensions[column].width = adjusted_width
+            
+            # Salvar o arquivo em um buffer temporário
+            data_timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            excel_file = io.BytesIO()
+            wb.save(excel_file)
+            excel_file.seek(0)
+            
+            # Gerar nome do arquivo com timestamp
+            filename = f"materiais_{data_timestamp}.xlsx"
+            
+            # Log do sucesso da exportacao
+            if is_truncated:
+                user_log("info", f"EXPORTACAO CONCLUIDA COM TRUNCAMENTO: {len(materials)} de {total_materials} materiais exportados")
+            else:
+                user_log("info", f"EXPORTACAO CONCLUIDA: {len(materials)} materiais exportados")
+            
+            # Enviar o arquivo como resposta
+            # Esta abordagem envia o arquivo diretamente para download
+            return send_file(
+                excel_file,
+                as_attachment=True,
+                download_name=filename,
+                mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+            
+        except Exception as e:
+            user_log("exception", f"ERRO AO GERAR ARQUIVO EXCEL: {str(e)}")
+            return jsonify({
+                'success': False,
+                'error': f"Erro ao gerar arquivo Excel: {str(e)}"
+            }), 500
+    except Exception as e:
+        user_log("exception", f"EXCECAO NA EXPORTACAO: Erro={str(e)}")
         return jsonify({
             'success': False,
             'error': f"Excecao ao processar requisicao: {str(e)}"

@@ -47,10 +47,8 @@
         .logo-container {
             text-align: center;
             margin-bottom: 2rem;
-        }
-        
-        .logo {
-            max-height: 120px;
+        }        .logo {
+            max-height: 100px;
             max-width: 100%;
         }
         
@@ -119,20 +117,25 @@
             margin-bottom: 1.2rem;
             font-size: 0.9rem;
         }
-        
-        footer {
+          footer {
             text-align: center;
             padding: 1rem 0;
             margin-top: auto;
             color: #6c757d;
             font-size: 0.9rem;
         }
+        
+        @media (max-width: 768px) {
+            .login-container {
+                max-width: 90%;
+                padding: 1.5rem;
+            }
+        }
     </style>
 </head>
-<body>
-    <div class="login-container">
+<body>    <div class="login-container">
         <div class="logo-container">
-            <img src="/static/logo.png" alt="Logo da Sysmex" class="logo">
+            <img src="/static/logologin.png" alt="Logo da Sysmex" class="logo">
         </div>
         
         <h1>Gestão de Materiais</h1>
