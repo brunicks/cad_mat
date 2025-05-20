@@ -95,8 +95,8 @@ app = Flask(__name__, static_folder='static')
 app.secret_key = 'sysmex_material_cadastro_secret_key'
 
 # Constantes da API
-SYSMEX_API_BASE_URL = "http://customer-API.qa.sysmexamerica.com/api"
-APP_ID = "b51bc34c-52bd-4678-9e08-1580b58c1a79"
+SYSMEX_API_BASE_URL = "url"
+APP_ID = "token"
 
 # Novas constantes para API de materiais
 MATERIAL_API_ENDPOINT = f"{SYSMEX_API_BASE_URL}/Material/AddOrUpdate"
